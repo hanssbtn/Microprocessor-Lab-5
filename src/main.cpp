@@ -5,6 +5,8 @@
 #include "timer.h"
 #include "spi.h"
 #include "pwm.h"
+#include "led_matrix.h"
+#include "buzzer.h"
 #include <avr/pgmspace.h>
 #include "math.h"
 
@@ -23,7 +25,7 @@ static const uint8_t SAD[8] PROGMEM = {
 }; 
 
 volatile uint8_t switch_state = BEFORE_PRESS;
-volatile uint8_t count = 0;
+bool enable = false;
 
 int16_t main(void) {
 	DEBUG_INIT(9600);
@@ -32,9 +34,10 @@ int16_t main(void) {
 	init_switch_pin();
 	init_piezo_alarm_pin();
 	init_spi();
+	init_led_matrix();
 	sei();
-	InitI2C();
 	delay_ms(50);
+	InitI2C();
 
 	// Write to accelerometer's power configuration register
 	get_status_name(StartI2C_Trans(MPU6050_I2C_ADDRESS));
@@ -60,9 +63,9 @@ int16_t main(void) {
 			} break;
 			case AFTER_RELEASE: {
 				switch_state = BEFORE_PRESS;
-				count++;
+				enable = false;
+				change_duty_cycle(0);
 				disable_piezo_alarm();
-				enable_piezo_alarm();
 			} break;
 			default: break;
 		}
@@ -101,22 +104,23 @@ int16_t main(void) {
 		DEBUG_PRINT(", Pitch: ");
 		DEBUG_PRINTLN(pitch);
 		DEBUG_PRINT("=====================================\n\n");
-		
-		DEBUG_PRINT("count: ");
-		DEBUG_PRINTLN(count);
-		DEBUG_PRINT("=====================================\n\n");
 
-		bool bruh_moment = roll <= 45.0 || pitch <= 45.0;
+		bool bruh_moment = roll >= 45.0 || pitch >= 45.0;
 		if (bruh_moment) {
+			enable_piezo_alarm();
+			enable = true;
+		} 
+		if (enable) {
 			DEBUG_PRINT("BRUH\n");
-			change_duty_cycle(1000);
-			for (int i = 1; i < 9; ++i) spi_write_byte(pgm_read_byte(&SAD[i - 1]), i);
+			for (int i = 0; i < 8; ++i) spi_write_byte(pgm_read_byte(&SAD[i]), i + 1);
+			play_chirping_sound();
 		} else {
-			DEBUG_PRINT("MOGGED\n");
-			change_duty_cycle(0);
-			for (int i = 1; i < 9; ++i) spi_write_byte(pgm_read_byte(&HAPPY[i - 1]), i);
+			DEBUG_PRINT("SIGMA\n");
+			for (int i = 0; i < 8; ++i) spi_write_byte(pgm_read_byte(&HAPPY[i]), i + 1);
+
 		}
-		DEBUG_PRINT(("=====================================\n\n"));
+
+		DEBUG_PRINT("=====================================\n\n");
 		delay_ms(100);
 	}
 	return 0;

@@ -1,9 +1,7 @@
 #ifndef COMMON_H__
 #define COMMON_H__
 
-// #include <setjmp.h>
 // #include <Arduino.h>
-
 #include <avr/interrupt.h>
 #include <avr/io.h>
 

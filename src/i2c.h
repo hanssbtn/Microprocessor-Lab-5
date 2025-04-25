@@ -55,15 +55,4 @@ const uint8_t Write(unsigned char data);
 const uint8_t Read_from(unsigned char SLA, unsigned char MEMADDRESS);
 unsigned char Read_data();
 
-#ifdef Arduino_h
-
-void get_status_name(uint8_t status);
-
-#else
-
-#define get_status_name(status) (void)status;
-
-#endif
-
-
 #endif // I2C_H__
