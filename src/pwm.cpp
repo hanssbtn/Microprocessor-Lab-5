@@ -2,7 +2,7 @@
 
 void init_piezo_alarm_pin(void) {
 	DDRE |= (1 << DDE3);
-	PORTE &= (1 << PORTE);
+	PORTE &= ~(1 << PORTE);
 }
 
 void init_timer3(void) {
